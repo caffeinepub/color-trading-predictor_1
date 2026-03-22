@@ -86,17 +86,16 @@ function getProfitColor(multiplier: number): {
   color: string;
   glow: string;
 } {
-  if (multiplier >= 2.0) {
-    return { color: "#00FF88", glow: "0 0 24px #00FF8890, 0 0 48px #00FF8850" };
-  }
-  if (multiplier >= 1.5) {
+  if (multiplier >= 1.8) {
     return { color: "#33E06F", glow: "0 0 20px #33E06F80, 0 0 40px #33E06F40" };
   }
-  // Always show as profit (gold) even lower multipliers
-  return {
-    color: "oklch(0.85 0.18 88)",
-    glow: "0 0 20px oklch(0.85 0.18 88 / 0.5), 0 0 40px oklch(0.85 0.18 88 / 0.3)",
-  };
+  if (multiplier >= 1.4) {
+    return {
+      color: "oklch(0.75 0.14 85)",
+      glow: "0 0 20px oklch(0.75 0.14 85 / 0.5), 0 0 40px oklch(0.75 0.14 85 / 0.3)",
+    };
+  }
+  return { color: "#E04646", glow: "0 0 20px #E0464680, 0 0 40px #E0464640" };
 }
 
 function getHackProfitColor(): { color: string; glow: string } {
@@ -114,14 +113,7 @@ const CLUB6_COLORS = [
 ];
 
 // ─── Valid gift codes ─────────────────────────────────────────────────────────
-const VALID_CODES = new Set([
-  "VIP2024",
-  "LUCKY6",
-  "PROFIT99",
-  "HACKPROFIT",
-  "BIGWIN",
-  "MAXPROFIT",
-]);
+const VALID_CODES = new Set(["VIP2024", "LUCKY6", "PROFIT99"]);
 
 const SIGNAL_BARS = [40, 65, 85, 100];
 
@@ -135,13 +127,14 @@ function formatTime(ts: bigint): string {
 }
 
 function getProfit(n: number): string {
-  // Always profit: range 1.80 – 2.80
-  return (1.8 + (n / 9) * 1.0 + Math.random() * 0.2).toFixed(2);
+  return n <= 4
+    ? (1.5 + n * 0.1).toFixed(2)
+    : (1.2 + (n - 5) * 0.12).toFixed(2);
 }
 
 function getHackProfit(n: number): string {
-  // Hack mode: boosted 3.0x – 9.9x based on number
-  const base = 3.0 + (n / 9) * 6.9;
+  // Hack mode: boosted 2.5x – 9.9x based on number
+  const base = 2.5 + (n / 9) * 7.4;
   const jitter = (Math.sin(n * 137.508) * 0.5 + 0.5) * 0.8;
   return Math.min(9.9, base + jitter).toFixed(2);
 }
@@ -437,8 +430,7 @@ function GiftCodePanel() {
         <p className="text-center text-xs text-muted-foreground mt-4">
           Try: <span className="font-mono opacity-60">VIP2024</span> •{" "}
           <span className="font-mono opacity-60">LUCKY6</span> •{" "}
-          <span className="font-mono opacity-60">PROFIT99</span> •{" "}
-          <span className="font-mono opacity-60">HACKPROFIT</span>
+          <span className="font-mono opacity-60">PROFIT99</span>
         </p>
       </div>
     </motion.section>
@@ -623,20 +615,14 @@ function PredictionCard({
           <motion.span
             key={isBig ? "big" : "small"}
             className={`text-5xl font-display font-bold tracking-wider ${
-              hackMode ? "matrix-text-anim" : ""
+              hackMode
+                ? "matrix-text-anim"
+                : isBig
+                  ? "text-gold-gradient text-glow-gold"
+                  : "text-glow-silver"
             }`}
             style={
-              hackMode
-                ? {}
-                : isBig
-                  ? {
-                      color: "#33E06F",
-                      textShadow: "0 0 24px #33E06F80, 0 0 48px #33E06F40",
-                    }
-                  : {
-                      color: "#E04646",
-                      textShadow: "0 0 24px #E0464680, 0 0 48px #E0464640",
-                    }
+              hackMode ? {} : isBig ? {} : { color: "oklch(0.93 0.008 240)" }
             }
             initial={{ opacity: 0, scale: 0.6, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -957,7 +943,7 @@ function ProfitNumberCard({
                 color: hackMode ? "#00FF4180" : `${profitStyle.color}b0`,
               }}
             >
-              {hackMode ? "⚡ HACK PROFIT" : "✦ PROFIT ONLY"}
+              {hackMode ? "HACK MULTIPLIER" : "MULTIPLIER"}
             </span>
           </motion.div>
         )}
@@ -973,9 +959,9 @@ function ProfitNumberCard({
       <p className="text-xs text-muted-foreground">
         {profitMultiplier
           ? hackMode
-            ? "⚡ Maximum hack profit guaranteed"
-            : "✦ Profit guaranteed — no loss"
-          : "Predict to unlock profit"}
+            ? "⚡ Boosted profit ratio"
+            : "Estimated profit ratio"
+          : "Profit after prediction"}
       </p>
     </div>
   );
@@ -992,7 +978,6 @@ export default function App() {
   const [winLossMap, setWinLossMap] = useState<WinLossMap>({});
   const [club6Numbers, setClub6Numbers] = useState<number[] | null>(null);
   const [hackMode, setHackMode] = useState(false);
-  const [periodNumber, setPeriodNumber] = useState<string>("");
   const prevPredictionRef = useRef<Prediction | null>(null);
 
   const { data: recentPredictions = [], isLoading: isLoadingHistory } =
@@ -1007,7 +992,11 @@ export default function App() {
         prevPredictionRef.current = latest;
         setCurrentPrediction(latest);
         const n = latest.inputNumber;
-        const base = hackMode ? getHackProfit(n) : getProfit(n);
+        const base = hackMode
+          ? getHackProfit(n)
+          : latest.result
+            ? (1.5 + Math.random() * 0.5).toFixed(2)
+            : (1.2 + Math.random() * 0.6).toFixed(2);
         setProfitMultiplier(base);
         setClub6Numbers(
           Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)),
@@ -1044,7 +1033,9 @@ export default function App() {
       };
       const profit = hackMode
         ? getHackProfit(selectedNum)
-        : getProfit(selectedNum);
+        : isBig
+          ? (1.5 + Math.random() * 0.5).toFixed(2)
+          : (1.2 + Math.random() * 0.6).toFixed(2);
       setProfitMultiplier(profit);
       setCurrentPrediction(localPrediction);
       setClub6Numbers(
@@ -1246,150 +1237,6 @@ export default function App() {
               ? "Advanced matrix override engaged. Profit multipliers boosted. CYAN signal unlocked."
               : "Advanced signal analysis. Enter your number, reveal your destiny."}
           </p>
-        </motion.div>
-      </section>
-
-      {/* Period Number Input */}
-      <section className="relative z-10 max-w-2xl mx-auto px-6 mb-8">
-        <motion.div
-          className="card-vip p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.5 }}
-          style={
-            hackMode
-              ? {
-                  border: "1px solid #00FF4140",
-                  boxShadow: "0 0 30px rgba(0,255,65,0.08)",
-                }
-              : {}
-          }
-        >
-          <p
-            className="text-center text-xs font-semibold tracking-[0.3em] mb-4 uppercase"
-            style={{ color: hackMode ? "#00FF41" : "oklch(0.75 0.14 85)" }}
-          >
-            ⚡ ENTER PERIOD NUMBER
-          </p>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="e.g. 20240322015"
-            value={periodNumber}
-            onChange={(e) => setPeriodNumber(e.target.value)}
-            data-ocid="period.input"
-            className="w-full text-center text-lg font-mono rounded-lg px-4 py-3 outline-none bg-black/60"
-            style={{
-              border: hackMode
-                ? "1.5px solid #00FF41"
-                : "1.5px solid oklch(0.75 0.14 85)",
-              color: hackMode ? "#00FF41" : "oklch(0.85 0.14 85)",
-              boxShadow: hackMode
-                ? "0 0 12px rgba(0,255,65,0.2)"
-                : "0 0 8px oklch(0.75 0.14 85 / 0.15)",
-            }}
-          />
-          {periodNumber !== "" &&
-            (() => {
-              const lastDigit = Number.parseInt(
-                periodNumber[periodNumber.length - 1] ?? "0",
-                10,
-              );
-              const isBig = lastDigit <= 4;
-              const colorSignal =
-                lastDigit === 0 || lastDigit === 5
-                  ? "VIOLET"
-                  : lastDigit % 2 === 0
-                    ? "RED"
-                    : "GREEN";
-              const colorHex =
-                colorSignal === "VIOLET"
-                  ? "#a855f7"
-                  : colorSignal === "RED"
-                    ? "#ef4444"
-                    : "#22c55e";
-              return (
-                <motion.div
-                  key={periodNumber}
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.25 }}
-                  className="flex gap-3 justify-center mt-5 flex-wrap"
-                >
-                  {/* NUMBER badge */}
-                  <div
-                    className="flex flex-col items-center rounded-xl px-5 py-3 min-w-[80px]"
-                    style={{
-                      background: "rgba(0,0,0,0.7)",
-                      border: "1px solid oklch(0.75 0.14 85 / 0.5)",
-                    }}
-                  >
-                    <span
-                      className="text-xs tracking-widest font-semibold mb-1"
-                      style={{ color: "oklch(0.65 0.1 85)" }}
-                    >
-                      NUMBER
-                    </span>
-                    <span
-                      className="text-3xl font-black font-mono"
-                      style={{
-                        color: hackMode ? "#00FF41" : "oklch(0.85 0.14 85)",
-                      }}
-                    >
-                      {lastDigit}
-                    </span>
-                  </div>
-                  {/* BIG/SMALL badge */}
-                  <div
-                    className="flex flex-col items-center rounded-xl px-5 py-3 min-w-[80px]"
-                    style={{
-                      background: "rgba(0,0,0,0.7)",
-                      border: `1px solid ${isBig ? "#22c55e80" : "#ef444480"}`,
-                    }}
-                  >
-                    <span
-                      className="text-xs tracking-widest font-semibold mb-1"
-                      style={{ color: "oklch(0.65 0.1 85)" }}
-                    >
-                      PREDICTION
-                    </span>
-                    <span
-                      className="text-2xl font-black"
-                      style={{
-                        color: isBig ? "#22c55e" : "#ef4444",
-                        textShadow: `0 0 10px ${isBig ? "#22c55e" : "#ef4444"}80`,
-                      }}
-                    >
-                      {isBig ? "BIG" : "SMALL"}
-                    </span>
-                  </div>
-                  {/* COLOR badge */}
-                  <div
-                    className="flex flex-col items-center rounded-xl px-5 py-3 min-w-[80px]"
-                    style={{
-                      background: "rgba(0,0,0,0.7)",
-                      border: `1px solid ${colorHex}80`,
-                    }}
-                  >
-                    <span
-                      className="text-xs tracking-widest font-semibold mb-1"
-                      style={{ color: "oklch(0.65 0.1 85)" }}
-                    >
-                      COLOR
-                    </span>
-                    <span
-                      className="text-2xl font-black"
-                      style={{
-                        color: colorHex,
-                        textShadow: `0 0 10px ${colorHex}80`,
-                      }}
-                    >
-                      {colorSignal}
-                    </span>
-                  </div>
-                </motion.div>
-              );
-            })()}
         </motion.div>
       </section>
 
