@@ -105,14 +105,10 @@ function buildLivePeriod(base: number): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  const slotNum =
-    Math.floor(
-      (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) / 60,
-    ) +
-    10001 +
-    base -
-    1050;
-  return `${y}${m}${day}1000${String(slotNum).padStart(5, "0")}`;
+  const totalSeconds =
+    d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  const sequence = Math.floor(totalSeconds / 60) + 1 + (base - 1050);
+  return `${y}${m}${day}10001${String(sequence).padStart(4, "0")}`;
 }
 
 // BDG WIN auto period: based on real time slots
@@ -121,18 +117,25 @@ function buildBdgAutoPeriod(timeOption: string): string {
   const y = d.getFullYear();
   const mo = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  const _totalSeconds =
+  const totalSeconds =
     d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
   let slotSeconds = 60;
-  if (timeOption === "30 Sec") slotSeconds = 30;
-  else if (timeOption === "1 Min") slotSeconds = 60;
-  else if (timeOption === "3 Min") slotSeconds = 180;
-  else if (timeOption === "5 Min") slotSeconds = 300;
-  const baseSlot = Math.floor(
-    (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) / slotSeconds,
-  );
-  const periodNum = 10001 + baseSlot;
-  return `${y}${mo}${day}1000${String(periodNum).padStart(5, "0")}`;
+  let gameId = "10001";
+  if (timeOption === "30 Sec") {
+    slotSeconds = 30;
+    gameId = "10002";
+  } else if (timeOption === "1 Min") {
+    slotSeconds = 60;
+    gameId = "10001";
+  } else if (timeOption === "3 Min") {
+    slotSeconds = 180;
+    gameId = "10003";
+  } else if (timeOption === "5 Min") {
+    slotSeconds = 300;
+    gameId = "10005";
+  }
+  const sequence = Math.floor(totalSeconds / slotSeconds) + 1; // 1-indexed
+  return `${y}${mo}${day}${gameId}${String(sequence).padStart(4, "0")}`;
 }
 
 function getBdgCountdown(timeOption: string): number {
