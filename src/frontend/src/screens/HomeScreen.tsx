@@ -1,171 +1,177 @@
-import { AlertTriangle, Cloud, Gamepad2, Monitor, Server } from "lucide-react";
+import { useEffect, useRef } from "react";
 
-interface Props {
+interface HomeScreenProps {
   onStart: () => void;
 }
 
-export default function HomeScreen({ onStart }: Props) {
+export default function HomeScreen({ onStart }: HomeScreenProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const cols = Math.floor(canvas.width / 18);
+    const drops: number[] = Array(cols).fill(1);
+    const chars = "0123456789ABCDEFHIJKLMNOPQRSTUVWXYZ⚡★◆▲▼";
+
+    const draw = () => {
+      ctx.fillStyle = "rgba(0,0,0,0.05)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#00ff4130";
+      ctx.font = "14px monospace";
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(text, i * 18, drops[i] * 18);
+        if (drops[i] * 18 > canvas.height && Math.random() > 0.975)
+          drops[i] = 0;
+        drops[i]++;
+      }
+    };
+
+    const interval = setInterval(draw, 60);
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-black flex flex-col">
-      {/* Header */}
-      <div className="px-4 pt-4 pb-2">
-        <h1 className="font-orbitron text-2xl font-black text-red-600 tracking-widest leading-tight">
-          ELITE NUMBER VIP
+    <div className="relative min-h-screen bg-black flex flex-col items-center justify-center overflow-hidden">
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 z-0 opacity-30 pointer-events-none"
+      />
+
+      <div className="relative z-10 flex flex-col items-center gap-6 px-4 text-center">
+        {/* Top badge */}
+        <div className="flex items-center gap-2 bg-yellow-900/30 border border-yellow-500/50 rounded-full px-4 py-1">
+          <span className="text-yellow-400 text-xs font-bold tracking-widest">
+            ★ ELITE VIP SYSTEM ★
+          </span>
+        </div>
+
+        {/* Main Title */}
+        <h1
+          className="text-4xl md:text-6xl font-black tracking-wider uppercase"
+          style={{
+            fontFamily: "Orbitron, monospace",
+            color: "#ffd700",
+            textShadow:
+              "0 0 20px #ffd700, 0 0 40px #ffd70088, 0 0 80px #ffd70044",
+          }}
+        >
+          ⚡ ELITE VIP
+          <br />
+          <span
+            style={{
+              color: "#00ff88",
+              textShadow: "0 0 20px #00ff88, 0 0 40px #00ff8888",
+            }}
+          >
+            HACK TOOL
+          </span>
         </h1>
-        <p className="text-red-500 text-xs font-semibold tracking-wider mt-0.5">
-          ⚡ PROFESSIONAL HACK TOOL ⚡
-        </p>
-      </div>
 
-      {/* Main action buttons */}
-      <div className="px-4 mt-3 grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          data-ocid="home.start_hack_button"
-          onClick={onStart}
-          className="bg-red-600 hover:bg-red-700 active:scale-95 transition-all text-white font-orbitron font-bold py-5 px-3 rounded flex flex-col items-center gap-2 red-glow"
+        {/* Confidence badge */}
+        <div
+          className="text-xl font-black tracking-widest uppercase px-6 py-2 rounded-lg border-2"
+          style={{
+            color: "#00ff88",
+            borderColor: "#00ff88",
+            boxShadow: "0 0 15px #00ff8866, inset 0 0 15px #00ff8811",
+            textShadow: "0 0 10px #00ff88",
+          }}
         >
-          <AlertTriangle className="w-8 h-8" />
-          <span className="text-sm tracking-wider">START HACK</span>
-        </button>
-        <a
-          href="https://t.me/"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-ocid="home.telegram_button"
-          className="bg-red-600 hover:bg-red-700 active:scale-95 transition-all text-white font-orbitron font-bold py-5 px-3 rounded flex flex-col items-center gap-2 red-glow no-underline"
-        >
-          <Gamepad2 className="w-8 h-8" />
-          <span className="text-sm tracking-wider">JOIN TG CHANNEL</span>
-        </a>
-      </div>
+          ✅ CONFIDENCE 100%
+        </div>
 
-      {/* Info boxes */}
-      <div className="px-4 mt-4 grid grid-cols-2 gap-3">
-        <div className="border border-red-600 rounded p-3 bg-black">
-          <p className="text-gray-400 text-xs uppercase tracking-wider">
-            Registered
-          </p>
-          <p className="text-red-500 font-orbitron font-bold text-sm mt-1">
-            00-00-0000
-          </p>
-        </div>
-        <div className="border border-red-600 rounded p-3 bg-black">
-          <p className="text-gray-400 text-xs uppercase tracking-wider">
-            Expired
-          </p>
-          <p className="text-red-500 font-orbitron font-bold text-sm mt-1">
-            00-00-0000
-          </p>
-        </div>
-      </div>
-
-      {/* Labels */}
-      <div className="px-4 mt-4 space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full tracking-wider">
-            Game Play Mod:
-          </span>
-          <span className="text-white text-sm font-semibold">
-            VIP HACK MODE
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full tracking-wider">
-            Game Name:
-          </span>
-          <span className="text-white text-sm font-semibold">
-            COLOR TRADING
-          </span>
-        </div>
-        <div className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded tracking-wider w-full text-center">
-          Game Version: Latest Version
-        </div>
-      </div>
-
-      {/* Right-aligned buttons */}
-      <div className="px-4 mt-4 space-y-2">
-        <div className="flex justify-end">
+        {/* Pulsing START button */}
+        <div className="relative mt-4">
+          {/* Outer rings */}
+          <div
+            className="absolute inset-0 rounded-full animate-ping"
+            style={{ backgroundColor: "#00ff8820", animationDuration: "1.5s" }}
+          />
+          <div
+            className="absolute -inset-3 rounded-full animate-ping"
+            style={{
+              backgroundColor: "#00ff8810",
+              animationDuration: "2s",
+              animationDelay: "0.5s",
+            }}
+          />
           <button
             type="button"
-            data-ocid="home.edit_limit_button"
-            className="bg-transparent border border-red-600 text-red-400 text-xs font-bold px-4 py-2 rounded tracking-wider hover:bg-red-950 transition-colors"
+            data-ocid="home.primary_button"
+            onClick={onStart}
+            className="relative w-40 h-40 rounded-full font-black text-xl uppercase tracking-wider transition-all duration-200 hover:scale-110 active:scale-95"
+            style={{
+              background: "radial-gradient(circle, #00ff8833 0%, #001a0d 100%)",
+              border: "3px solid #00ff88",
+              color: "#00ff88",
+              boxShadow:
+                "0 0 30px #00ff88, 0 0 60px #00ff8866, 0 0 100px #00ff8833",
+              textShadow: "0 0 15px #00ff88",
+              fontFamily: "Orbitron, monospace",
+            }}
           >
-            Tab To Edit Daily Limit ₹0000
+            START
+            <br />
+            HACK
           </button>
         </div>
-        <div className="flex justify-end">
-          <button
-            type="button"
-            data-ocid="home.device_info_button"
-            className="bg-transparent border border-red-600 text-red-400 text-xs font-bold px-4 py-2 rounded tracking-wider hover:bg-red-950 transition-colors"
-          >
-            Device Info: Android Mobile
-          </button>
-        </div>
-      </div>
 
-      {/* Divider */}
-      <div className="px-4 mt-5">
-        <div className="h-px bg-red-600 w-full" />
-      </div>
+        {/* Feature badges */}
+        <div className="flex flex-wrap justify-center gap-2 mt-4">
+          {["🟢 BIG 5-9", "🔴 SMALL 0-4", "🎨 COLOR", "💰 PROFIT"].map((f) => (
+            <span
+              key={f}
+              className="text-xs font-bold px-3 py-1 rounded-full"
+              style={{
+                background: "#111",
+                border: "1px solid #333",
+                color: "#aaa",
+              }}
+            >
+              {f}
+            </span>
+          ))}
+        </div>
 
-      {/* Server illustration */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-4">
-        <div className="flex items-end justify-center gap-4 opacity-80">
-          {/* Cloud */}
-          <div className="flex flex-col items-center gap-1">
-            <Cloud className="w-12 h-12 text-red-500" strokeWidth={1.5} />
-            <div className="w-0.5 h-8 bg-red-600" />
-          </div>
-          {/* Server */}
-          <div className="flex flex-col items-center gap-1">
-            <Server className="w-10 h-10 text-red-400" strokeWidth={1.5} />
-            <div className="grid grid-cols-3 gap-0.5 mt-1">
-              {[0, 1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="w-1.5 h-1.5 bg-red-500 rounded-full"
-                  style={{ animationDelay: `${i * 0.2}s` }}
-                />
-              ))}
-            </div>
-          </div>
-          {/* Laptop */}
-          <div className="flex flex-col items-center gap-1">
-            <Monitor className="w-12 h-12 text-red-500" strokeWidth={1.5} />
-            <div className="w-0.5 h-8 bg-red-600" />
-          </div>
+        {/* Version */}
+        <div
+          className="px-4 py-1 rounded-full text-sm font-bold tracking-widest"
+          style={{
+            background: "linear-gradient(90deg, #1a0a00, #2a1500)",
+            border: "1px solid #f97316",
+            color: "#f97316",
+            boxShadow: "0 0 10px #f9731644",
+          }}
+        >
+          v25.0 PREMIUM
         </div>
-        {/* Connection lines */}
-        <div className="flex items-center gap-2 mt-2">
-          <div className="h-px flex-1 bg-red-600 max-w-16" />
-          <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
-          <div className="h-px flex-1 bg-red-600 max-w-16" />
-        </div>
-        <p className="font-orbitron font-bold text-red-600 text-center tracking-widest text-sm animate-pulse">
-          SERVER CONNECTED SUCCESSFUL
+
+        <p
+          className="font-bold tracking-widest uppercase text-sm"
+          style={{ color: "#ffd700", textShadow: "0 0 8px #ffd700" }}
+        >
+          BIG SMALL COLOR PROFIT GUARANTEED
         </p>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-          <span className="text-green-500 text-xs font-bold tracking-wider">
-            ONLINE
-          </span>
-        </div>
-      </div>
 
-      {/* Footer */}
-      <div className="px-4 pb-4 text-center">
-        <p className="text-gray-700 text-xs">
-          © {new Date().getFullYear()}. Built with ❤️ using{" "}
-          <a
-            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-red-900 hover:text-red-700"
-          >
-            caffeine.ai
-          </a>
+        {/* Footer */}
+        <p className="text-xs text-gray-600 mt-4 tracking-widest uppercase">
+          Powered by ELITE VIP SYSTEM
         </p>
       </div>
     </div>
