@@ -27,61 +27,52 @@ function getPrediction(
   tradeCount: number,
   hackMode: boolean,
 ): PredictionResult {
+  // HACK MODE: ALWAYS BIG + GREEN + high profit, NO exceptions
   if (hackMode) {
-    const num1 = 5 + Math.floor(Math.random() * 5);
-    const num2 = 5 + Math.floor(Math.random() * 5);
+    const num1 = 5 + Math.floor(Math.random() * 5); // 5-9
+    const num2 = 5 + Math.floor(Math.random() * 5); // 5-9
     const profit = Number.parseFloat((5 + Math.random() * 4.9).toFixed(1));
     return { num1, num2, type: "BIG", color: "GREEN", profit, isWin: true };
   }
 
-  const positionInCycle = tradeCount % 5;
-  const isLoss = positionInCycle === 4;
+  // W W W W L pattern: every 5th trade (position 4) is a loss
+  const isLoss = tradeCount % 5 === 4;
 
-  if (selectedNum !== null) {
-    const isBig = selectedNum >= 5;
+  // Determine BIG or SMALL based on selected number
+  // If no number selected, default to BIG
+  const isBig = selectedNum === null ? true : selectedNum >= 5;
+
+  if (isBig) {
+    const num1 = 5 + Math.floor(Math.random() * 5); // 5-9
+    const num2 = 5 + Math.floor(Math.random() * 5); // 5-9
     if (isLoss) {
-      const lossNum1 = isBig
-        ? Math.floor(Math.random() * 5)
-        : 5 + Math.floor(Math.random() * 5);
-      const lossNum2 = isBig
-        ? Math.floor(Math.random() * 5)
-        : 5 + Math.floor(Math.random() * 5);
       return {
-        num1: lossNum1,
-        num2: lossNum2,
-        type: isBig ? "SMALL" : "BIG",
-        color: isBig ? "RED" : "GREEN",
+        num1,
+        num2,
+        type: "BIG",
+        color: "GREEN",
         profit: 0,
         isWin: false,
       };
     }
-    const num1 = isBig
-      ? 5 + Math.floor(Math.random() * 5)
-      : Math.floor(Math.random() * 5);
-    const num2 = isBig
-      ? 5 + Math.floor(Math.random() * 5)
-      : Math.floor(Math.random() * 5);
-    const profit = Number.parseFloat((1.8 + Math.random() * 1.2).toFixed(2));
+    const profit = Number.parseFloat((2.5 + Math.random() * 4.5).toFixed(2));
+    return { num1, num2, type: "BIG", color: "GREEN", profit, isWin: true };
+  }
+  // SMALL: selectedNum is 0-4
+  const num1 = Math.floor(Math.random() * 5); // 0-4
+  const num2 = Math.floor(Math.random() * 5); // 0-4
+  if (isLoss) {
     return {
       num1,
       num2,
-      type: isBig ? "BIG" : "SMALL",
-      color: isBig ? "GREEN" : "RED",
-      profit,
-      isWin: true,
+      type: "SMALL",
+      color: "RED",
+      profit: 0,
+      isWin: false,
     };
   }
-
-  const num1 = 5 + Math.floor(Math.random() * 5);
-  const num2 = 5 + Math.floor(Math.random() * 5);
-  return {
-    num1,
-    num2,
-    type: "BIG",
-    color: "GREEN",
-    profit: Number.parseFloat((1.8 + Math.random() * 1.2).toFixed(2)),
-    isWin: true,
-  };
+  const profit = Number.parseFloat((2.5 + Math.random() * 4.5).toFixed(2));
+  return { num1, num2, type: "SMALL", color: "RED", profit, isWin: true };
 }
 
 function generatePeriodNumber(mode: "30s" | "1m" | "3m" | "5m"): string {
@@ -298,7 +289,8 @@ export default function PredictionScreen({ onBack }: { onBack: () => void }) {
   const triggerBdgResult = (period: string) => {
     if (bdgSpinning) return;
     setBdgSpinning(true);
-    const result = getPrediction(null, bdgHistory.length, hackMode);
+    const periodLastDigit = period ? Number.parseInt(period.slice(-1)) : null;
+    const result = getPrediction(periodLastDigit, bdgHistory.length, hackMode);
 
     const spinInterval = setInterval(() => {
       setBdgSpinDisplay([
